@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero Colaborativo · Plenaria Virtual · Módulo 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g: #1A6B3C; --gm: #2E8B57; --gc: #D4EDDA; --gp: #EBF5EE;
+  --az: #1A4B8B; --azc: #D0E4F7;
+  --na: #9A5800; --nac: #FFF0CC;
+  --mo: #6B2D8B; --moc: #F0E6FA;
+  --am: #7A5500; --amc: #FFF8E0;
+  --ro: #A81C1C;
+  --text: #1a1a1a; --muted: #666; --border: #e2e8e2;
+  --surf: #fff; --bg: #f0f4f1;
+  --radius: 14px; --radius-sm: 8px;
+  --shadow: 0 2px 12px rgba(0,0,0,.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+  --g1:#1A4B8B; --g1l:#E6EEF8;
+  --g2:#1A6B3C; --g2l:#E6F3EB;
+  --g3:#9A5800; --g3l:#FFF3E0;
+  --g4:#6B2D8B; --g4l:#F3EBF9;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.hdr {
+  background: var(--g);
+  padding: 0 24px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 2px 16px rgba(0,0,0,.18);
+}
+.hdr-accent { width: 4px; height: 36px; background: #6DBFA0; border-radius: 2px; flex-shrink: 0; }
+.hdr-text { flex: 1; min-width: 0; }
+.hdr-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: #fff; letter-spacing: .01em; }
+.hdr-sub { font-size: 11px; color: #8FD4A8; font-weight: 400; margin-top: 1px; }
+.hdr-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,.25); animation: pulse 2s infinite; flex-shrink: 0; }
+.live-dot.off { background: #aaa; box-shadow: none; animation: none; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 3px rgba(74,222,128,.25)} 50%{box-shadow:0 0 0 6px rgba(74,222,128,.1)} }
+.live-label { font-size: 12px; color: #8FD4A8; font-weight: 500; }
+.timer-pill {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.timer-pill:hover { background: rgba(255,255,255,.25); }
+.timer-pill.run { background: var(--ro); border-color: var(--ro); }
+
+/* ── TABS ── */
+.tabs-wrap { background: var(--surf); border-bottom: 1.5px solid var(--border); position: sticky; top: 58px; z-index: 190; }
+.tabs { display: flex; overflow-x: auto; padding: 0 24px; gap: 0; max-width: 1280px; margin: 0 auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  display: flex; align-items: center; gap: 7px;
+  padding: 13px 18px;
+  font-size: 13px; font-weight: 500;
+  color: var(--muted);
+  background: none; border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer; white-space: nowrap;
+  margin-bottom: -1.5px;
+  transition: color .15s, border-color .15s;
+}
+.tab:hover { color: var(--g); }
+.tab.on { color: var(--g); border-bottom-color: var(--g); font-weight: 600; }
+.tab-icon { font-size: 16px; }
+.tab-cnt {
+  background: var(--gc); color: var(--g);
+  border-radius: 10px; padding: 1px 7px;
+  font-size: 11px; font-weight: 700;
+  min-width: 20px; text-align: center;
+}
+
+/* ── LAYOUT ── */
+.wrap { max-width: 1280px; margin: 0 auto; padding: 28px 24px 80px; }
+.sec { display: none; }
+.sec.on { display: block; }
+
+.sec-head { margin-bottom: 20px; }
+.sec-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--g);
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.sec-label::after { content:''; flex:1; height:1.5px; background:var(--gc); }
+.sec-desc {
+  background: var(--gp); border-left: 4px solid var(--gm);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 12px 16px; font-size: 13.5px; line-height: 1.6;
+  color: var(--text);
+}
+.sec-desc strong { color: var(--g); }
+
+/* ── CARDS ── */
+.card { background: var(--surf); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+
+/* ── POST-ITS ── */
+.postit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px,1fr)); gap: 12px; margin-bottom: 16px; }
+.postit {
+  background: var(--amc); border: 1px solid #D4B050;
+  border-radius: 10px; padding: 14px 36px 14px 14px;
+  font-size: 13.5px; line-height: 1.55; min-height: 90px;
+  position: relative; word-break: break-word;
+  animation: popIn .2s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn { from{transform:scale(.85);opacity:0} to{transform:scale(1);opacity:1} }
+.postit-del { position:absolute; top:8px; right:10px; background:none; border:none; color:#bbb; cursor:pointer; font-size:17px; line-height:1; padding:0; }
+.postit-del:hover { color:var(--ro); }
+.postit-author { font-size:11px; font-weight:600; color:var(--am); margin-bottom:5px; }
+
+.input-row { display:flex; gap:8px; }
+.inp {
+  flex:1; border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  padding:10px 14px; font-size:14px; font-family:inherit;
+  background:var(--surf); color:var(--text); outline:none;
+  transition:border-color .15s;
+}
+.inp:focus { border-color:var(--g); }
+.btn {
+  background:var(--g); color:#fff; border:none;
+  border-radius:var(--radius-sm); padding:10px 20px;
+  font-size:13px; font-weight:600; cursor:pointer;
+  font-family:inherit; white-space:nowrap; transition:background .15s;
+}
+.btn:hover { background:var(--gm); }
+.btn-sm {
+  background:var(--g); color:#fff; border:none;
+  border-radius:6px; padding:7px 14px;
+  font-size:12px; font-weight:600; cursor:pointer;
+  font-family:inherit; transition:background .15s;
+}
+.btn-sm:hover { background:var(--gm); }
+
+/* ── SHANGAI TABLE ── */
+.stbl-wrap { overflow-x:auto; border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); }
+.stbl { width:100%; border-collapse:collapse; min-width:700px; }
+.stbl thead th { padding:13px 16px; font-size:12px; font-weight:700; text-align:left; background:#f7faf7; border-bottom:2px solid var(--border); }
+.stbl tbody td { padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
+.stbl tbody tr:last-child td { border-bottom:none; }
+.tema-tag { display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap; }
+.stbl-ta {
+  width:100%; min-height:80px; border:1.5px solid var(--border); border-radius:8px;
+  padding:9px 11px; font-size:13px; font-family:inherit; line-height:1.5;
+  background:var(--surf); color:var(--text); resize:vertical; outline:none;
+  transition:border-color .15s;
+}
+.stbl-ta:focus { border-color:var(--g); }
+.filled { background:var(--gp) !important; }
+.stbl-ta.filled { border-color:var(--gm); }
+
+/* ── MURO ── */
+.muro-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+.muro-card { border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); }
+.muro-hdr { padding:13px 16px; color:#fff; font-size:13px; font-weight:700; letter-spacing:.01em; }
+.muro-body { padding:12px; background:var(--surf); }
+.crit-block { margin-bottom:10px; }
+.crit-block:last-child { margin-bottom:0; }
+.crit-lbl { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+.crit-notas { display:flex; flex-direction:column; gap:4px; margin-bottom:5px; }
+.nota {
+  background:var(--gp); border:1px solid var(--gc);
+  border-radius:7px; padding:7px 28px 7px 10px;
+  font-size:12.5px; line-height:1.45; position:relative;
+  word-break:break-word;
+  animation:popIn .2s cubic-bezier(.34,1.56,.64,1);
+}
+.nota strong { color:var(--g); font-size:11px; }
+.nota-del { position:absolute; top:5px; right:7px; background:none; border:none; color:#ccc; cursor:pointer; font-size:13px; padding:0; line-height:1; }
+.nota-del:hover { color:var(--ro); }
+.nota-row { display:flex; gap:5px; }
+.nota-inp { flex:1; border:1.5px solid var(--border); border-radius:6px; padding:6px 10px; font-size:12px; background:var(--surf); color:var(--text); outline:none; font-family:inherit; }
+.nota-inp:focus { border-color:var(--g); }
+
+/* ── GENERADORA ── */
+.gen-cols { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+@media(max-width:680px){ .gen-cols{grid-template-columns:1fr;} }
+.gen-col { border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow); }
+.gen-col-hdr { padding:14px 16px; color:#fff; font-size:14px; font-weight:700; }
+.gen-col-body { padding:12px; min-height:180px; background:var(--surf); }
+.gen-idea {
+  background:var(--gp); border:1px solid var(--gc);
+  border-radius:8px; padding:9px 32px 9px 12px;
+  font-size:13px; line-height:1.45; margin-bottom:7px;
+  position:relative; word-break:break-word;
+  animation:popIn .2s cubic-bezier(.34,1.56,.64,1);
+}
+.gen-del { position:absolute; top:7px; right:9px; background:none; border:none; color:#ccc; cursor:pointer; font-size:14px; padding:0; }
+.gen-del:hover { color:var(--ro); }
+.gen-inp-row { display:flex; gap:6px; padding:8px 12px 12px; background:var(--surf); }
+.gen-inp { flex:1; border:1.5px solid var(--border); border-radius:6px; padding:7px 11px; font-size:13px; background:var(--surf); color:var(--text); outline:none; font-family:inherit; }
+.gen-inp:focus { border-color:var(--g); }
+
+/* ── FRASES ── */
+.frase-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px; margin-bottom:20px; }
+.frase-card {
+  background:var(--surf); border:1px solid var(--gc);
+  border-radius:var(--radius); padding:16px;
+  border-left:4px solid var(--gm);
+  animation:popIn .2s cubic-bezier(.34,1.56,.64,1);
+  position:relative;
+}
+.frase-card .fa { font-size:11px; color:var(--muted); margin-bottom:3px; font-weight:600; }
+.frase-card .fb { font-size:13.5px; line-height:1.55; color:var(--text); }
+.frase-card .sep { margin:10px 0 6px; height:1px; background:var(--gc); }
+.frase-card .fc { font-size:11px; color:var(--muted); font-weight:600; margin-bottom:3px; }
+.frase-card .fd { font-size:13.5px; line-height:1.55; color:var(--g); font-style:italic; }
+.frase-del { position:absolute; top:10px; right:12px; background:none; border:none; color:#ccc; cursor:pointer; font-size:15px; padding:0; }
+.frase-del:hover { color:var(--ro); }
+
+.frase-form { background:var(--surf); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); }
+.frase-field { margin-bottom:14px; }
+.frase-lbl { font-size:12px; font-weight:600; color:var(--muted); margin-bottom:5px; display:block; }
+.frase-inp { width:100%; border:1.5px solid var(--border); border-radius:8px; padding:10px 14px; font-size:14px; font-family:inherit; background:var(--surf); color:var(--text); outline:none; }
+.frase-inp:focus { border-color:var(--g); }
+
+/* ── GUIA ── */
+.blocks-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-bottom:28px; }
+.block-card { border:1px solid var(--border); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); background:var(--surf); }
+.block-num { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:#fff; margin-bottom:10px; }
+.block-time { font-size:11px; font-weight:700; letter-spacing:.06em; margin-bottom:5px; }
+.block-title { font-size:14px; font-weight:600; margin-bottom:6px; }
+.block-desc { font-size:12.5px; line-height:1.55; color:var(--muted); }
+
+.roles-tbl { width:100%; border-collapse:collapse; font-size:13px; }
+.roles-tbl th { padding:10px 14px; text-align:left; font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); border-bottom:1.5px solid var(--border); background:#f7faf7; }
+.roles-tbl td { padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.roles-tbl tr:last-child td { border-bottom:none; }
+
+.cont-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-top:20px; }
+.cont-card { border-radius:var(--radius-sm); padding:13px; font-size:12.5px; line-height:1.5; }
+.cont-title { font-weight:700; margin-bottom:4px; font-size:13px; }
+
+/* ── TIMER OVERLAY ── */
+.t-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:999; align-items:center; justify-content:center; }
+.t-overlay.on { display:flex; }
+.t-modal { background:var(--surf); border-radius:20px; padding:36px 44px; text-align:center; min-width:300px; box-shadow:var(--shadow-lg); }
+.t-lbl { font-size:13px; color:var(--muted); font-weight:500; margin-bottom:8px; }
+.t-disp { font-size:72px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1; margin:8px 0 20px; transition:color .3s; }
+.t-disp.ok { color:var(--g); }
+.t-disp.warn { color:var(--na); }
+.t-disp.crit { color:var(--ro); }
+.t-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:16px; }
+.t-btn { padding:10px 22px; border-radius:var(--radius-sm); border:1.5px solid var(--border); background:var(--surf); color:var(--text); font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+.t-btn.pri { background:var(--g); color:#fff; border-color:var(--g); }
+.t-btn.dan { background:var(--ro); color:#fff; border-color:var(--ro); }
+.t-btn:hover { opacity:.85; }
+.t-presets { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; }
+.t-pre { padding:5px 13px; border-radius:16px; border:1.5px solid var(--border); background:var(--bg); color:var(--text); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
+.t-pre:hover { border-color:var(--g); color:var(--g); }
+
+/* ── NOMBRE MODAL ── */
+.n-overlay { display:flex; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center; }
+.n-modal { background:var(--surf); border-radius:20px; padding:36px 44px; min-width:340px; box-shadow:var(--shadow-lg); text-align:center; }
+.n-logo { font-family:'DM Serif Display',serif; font-size:24px; color:var(--g); margin-bottom:6px; }
+.n-sub { font-size:13px; color:var(--muted); margin-bottom:24px; }
+.n-lbl { font-size:13px; font-weight:600; color:var(--muted); margin-bottom:8px; text-align:left; }
+.n-inp { width:100%; border:2px solid var(--border); border-radius:var(--radius-sm); padding:12px 16px; font-size:15px; font-family:inherit; outline:none; color:var(--text); background:var(--surf); }
+.n-inp:focus { border-color:var(--g); }
+.n-btn { margin-top:14px; width:100%; background:var(--g); color:#fff; border:none; border-radius:var(--radius-sm); padding:13px; font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; }
+.n-btn:hover { background:var(--gm); }
+
+/* ── MISC ── */
+.empty { text-align:center; padding:32px 16px; color:#bbb; font-size:13px; }
+.empty-icon { font-size:32px; margin-bottom:8px; }
+.chip { display:inline-flex; align-items:center; gap:5px; padding:4px 11px; border-radius:20px; font-size:12px; font-weight:700; }
+.section-intro { font-size:14px; color:var(--muted); margin-bottom:20px; line-height:1.6; }
+
+/* ── SYNC STATUS ── */
+.sync-bar { background:var(--gp); border:1px solid var(--gc); border-radius:var(--radius-sm); padding:8px 14px; font-size:12px; color:var(--g); font-weight:500; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.sync-bar.err { background:#FEF2F2; border-color:#FCA5A5; color:var(--ro); }
+</style>
+</head>
+<body>
+
+<!-- NOMBRE MODAL -->
+<div class="n-overlay" id="nameModal">
+  <div class="n-modal">
+    <div class="n-logo">Plenaria Virtual</div>
+    <div class="n-sub">Módulo 3 · Promoción de la Salud · UniCauca</div>
+    <div class="n-lbl">¿Cuál es tu nombre?</div>
+    <input class="n-inp" id="nameInp" placeholder="Ej: Laura Trujillo" maxlength="40">
+    <button class="n-btn">Ingresar al tablero →</button>
+  </div>
+</div>
+
+<!-- TIMER -->
+<div class="t-overlay" id="tOv">
+  <div class="t-modal">
+    <div class="t-lbl" id="tLbl">Temporizador</div>
+    <div class="t-disp ok" id="tDisp">20:00</div>
+    <div class="t-btns">
+      <button class="t-btn pri" id="tStartBtn" onclick="tToggle()">Iniciar</button>
+      <button class="t-btn" onclick="tReset()">Reiniciar</button>
+      <button class="t-btn dan" onclick="closeTm()">Cerrar</button>
+    </div>
+    <div class="t-presets">
+      <button class="t-pre" onclick="setTm(90,'Reflexión del grupo')">1:30 reflexión</button>
+      <button class="t-pre" onclick="setTm(420,'Coevaluación')">7 min coevaluación</button>
+      <button class="t-pre" onclick="setTm(300,'Síntesis docente')">5 min síntesis</button>
+      <button class="t-pre" onclick="setTm(600,'Salas pequeñas')">10 min salas</button>
+      <button class="t-pre" onclick="setTm(120,'Frase de salida')">2 min frase</button>
+      <button class="t-pre" onclick="setTm(1200,'Grupo presentador')">20 min grupo</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-accent"></div>
+  <div class="hdr-text">
+    <div class="hdr-title">Tablero Colaborativo · Plenaria Virtual</div>
+    <div class="hdr-sub">Módulo 3 · Promoción de la Salud · 2026</div>
+  </div>
+  <div class="hdr-right">
+    <div class="live-dot off" id="liveDot"></div>
+    <span class="live-label" id="liveLabel">Conectando…</span>
+    <button class="timer-pill" id="tmrPill" onclick="openTm()">⏱ 20:00</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab on" onclick="go('s1',this)"><span class="tab-icon">💬</span>Apertura<span class="tab-cnt" id="cnt1">0</span></button>
+    <button class="tab" onclick="go('s2',this)"><span class="tab-icon">🗺</span>Tabla Shángai</button>
+    <button class="tab" onclick="go('s3',this)"><span class="tab-icon">📋</span>Coevaluación</button>
+    <button class="tab" onclick="go('s4',this)"><span class="tab-icon">💡</span>Pregunta Generadora<span class="tab-cnt" id="cnt4">0</span></button>
+    <button class="tab" onclick="go('s5',this)"><span class="tab-icon">✨</span>Frase de Salida<span class="tab-cnt" id="cnt5">0</span></button>
+    <button class="tab" onclick="go('s6',this)"><span class="tab-icon">📌</span>Guía Docente</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+<!-- ── S1: APERTURA ── -->
+<div class="sec on" id="s1">
+  <div class="sec-head">
+    <div class="sec-label">Sección 1 — Apertura · Bloque 0 (0:00–0:10)</div>
+    <div class="sec-desc"><strong>Instrucción:</strong> "Antes de ver los videos, escribe aquí la idea del Módulo 3 que más te costó entender o que más te sorprendió. Una frase, no un párrafo."</div>
+  </div>
+  <div class="card">
+    <div class="postit-grid" id="pitGrid"></div>
+    <div class="input-row">
+      <input class="inp" id="pitInp" placeholder="Escribe tu idea del Módulo 3…" maxlength="200" onkeydown="if(event.key==='Enter')addPit()">
+      <button class="btn" onclick="addPit()">+ Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── S2: SHANGAI ── -->
+<div class="sec" id="s2">
+  <div class="sec-head">
+    <div class="sec-label">Sección 2 — Tabla de Pilares de Shángai · Bloque 1</div>
+    <div class="sec-desc"><strong>Facilitadores:</strong> Completar su columna asignada con los ejemplos más potentes que aparezcan en los videos. Las celdas se sincronizan automáticamente.</div>
+  </div>
+  <div class="stbl-wrap">
+    <table class="stbl">
+      <thead>
+        <tr>
+          <th style="width:160px">Tema 4×4</th>
+          <th style="color:var(--g)">🏛 Pilar 1 — Gobernanza sanitaria<br><small style="font-weight:400;color:var(--muted)">Facilitador G1 completa</small></th>
+          <th style="color:var(--az)">📚 Pilar 2 — Educación sanitaria<br><small style="font-weight:400;color:var(--muted)">Facilitador G2 completa</small></th>
+          <th style="color:var(--na)">🏙 Pilar 3 — Ciudades saludables<br><small style="font-weight:400;color:var(--muted)">Facilitador G3 completa</small></th>
+        </tr>
+      </thead>
+      <tbody id="stblBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── S3: MURO ── -->
+<div class="sec" id="s3">
+  <div class="sec-head">
+    <div class="sec-label">Sección 3 — Muro de Coevaluación · Bloque 1 (7 min × grupo)</div>
+    <div class="sec-desc"><strong>Facilitadores:</strong> Mientras el evaluador habla (90 seg), escribir aquí su valoración resumida. El autor queda registrado automáticamente.</div>
+  </div>
+  <div class="muro-grid" id="muroGrid"></div>
+</div>
+
+<!-- ── S4: GENERADORA ── -->
+<div class="sec" id="s4">
+  <div class="sec-head">
+    <div class="sec-label">Sección 4 — Pregunta Generadora · Bloque 2 (Salas + Plenaria)</div>
+    <div class="sec-desc"><strong>Consigna:</strong> "¿Qué tiene que cambiar — en las personas, en las instituciones y en las ciudades del Cauca — para que la promoción de la salud sea real? Usen los videos como evidencia."</div>
+  </div>
+  <div class="gen-cols">
+    <div class="gen-col">
+      <div class="gen-col-hdr" style="background:var(--az)">👤 Personas</div>
+      <div class="gen-col-body" id="genP"></div>
+      <div class="gen-inp-row">
+        <input class="gen-inp" id="inP" placeholder="Agregar idea…" maxlength="180" onkeydown="if(event.key==='Enter')addGen('P')">
+        <button class="btn-sm" onclick="addGen('P')">+</button>
+      </div>
+    </div>
+    <div class="gen-col">
+      <div class="gen-col-hdr" style="background:var(--g)">🏥 Instituciones</div>
+      <div class="gen-col-body" id="genI"></div>
+      <div class="gen-inp-row">
+        <input class="gen-inp" id="inI" placeholder="Agregar idea…" maxlength="180" onkeydown="if(event.key==='Enter')addGen('I')">
+        <button class="btn-sm" onclick="addGen('I')">+</button>
+      </div>
+    </div>
+    <div class="gen-col">
+      <div class="gen-col-hdr" style="background:var(--na)">🏙 Ciudades</div>
+      <div class="gen-col-body" id="genC"></div>
+      <div class="gen-inp-row">
+        <input class="gen-inp" id="inC" placeholder="Agregar idea…" maxlength="180" onkeydown="if(event.key==='Enter')addGen('C')">
+        <button class="btn-sm" onclick="addGen('C')">+</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S5: FRASES ── -->
+<div class="sec" id="s5">
+  <div class="sec-head">
+    <div class="sec-label">Sección 5 — Frase de Salida · Bloque 3 (2 min individual)</div>
+    <div class="sec-desc"><strong>Instrucción:</strong> Completa esta frase de forma individual. "Antes entendía la promoción de la salud como ___. Ahora la entiendo como ___."</div>
+  </div>
+  <div class="frase-grid" id="fraseGrid"></div>
+  <div class="frase-form">
+    <div class="frase-field">
+      <label class="frase-lbl">Antes entendía la promoción de la salud como…</label>
+      <input class="frase-inp" id="frA" placeholder="Escribe aquí…" maxlength="300">
+    </div>
+    <div class="frase-field" style="margin-bottom:0">
+      <label class="frase-lbl">Ahora la entiendo como…</label>
+      <input class="frase-inp" id="frB" placeholder="Escribe aquí…" maxlength="300">
+    </div>
+    <button class="btn" style="margin-top:14px;width:100%" onclick="addFrase()">Publicar mi frase</button>
+  </div>
+</div>
+
+<!-- ── S6: GUIA ── -->
+<div class="sec" id="s6">
+  <div class="sec-head">
+    <div class="sec-label">Sección 6 — Guía de Facilitación · Solo docentes</div>
+  </div>
+  <div class="blocks-grid">
+    <div class="block-card" style="border-top:3px solid var(--mo)">
+      <div class="block-num" style="background:var(--mo)">0</div>
+      <div class="block-time" style="color:var(--mo)">0:00–0:10 · 10 min</div>
+      <div class="block-title">Apertura</div>
+      <div class="block-desc">Post-its Sección 1. Leer 4–5 en voz alta. Señalar cuáles tienen mayor carga conceptual. Explicar mecánica.</div>
+    </div>
+    <div class="block-card" style="border-top:3px solid var(--g)">
+      <div class="block-num" style="background:var(--g)">1</div>
+      <div class="block-time" style="color:var(--g)">0:10–1:30 · 80 min</div>
+      <div class="block-title">Presentaciones × 4 grupos</div>
+      <div class="block-desc">Video (5) → Reflexión grupo (3) → Coevaluación (7) → Síntesis (5). Nominar evaluadores por nombre. Secciones 2 y 3 activas.</div>
+    </div>
+    <div class="block-card" style="border-top:3px solid var(--az)">
+      <div class="block-num" style="background:var(--az)">2</div>
+      <div class="block-time" style="color:var(--az)">1:30–1:50 · 20 min</div>
+      <div class="block-title">Salas + Síntesis</div>
+      <div class="block-desc">Abrir 4 salas mixtas (10 min). Voceros 90 seg c/u. Llenar Sección 4 en tiempo real mientras hablan.</div>
+    </div>
+    <div class="block-card" style="border-top:3px solid var(--na)">
+      <div class="block-num" style="background:var(--na)">3</div>
+      <div class="block-time" style="color:var(--na)">1:50–2:00 · 10 min</div>
+      <div class="block-title">Cierre</div>
+      <div class="block-desc">Frase de salida Sección 5 (2 min). Reconocimiento específico. Contexto Cauca. Fecha de calificaciones.</div>
+    </div>
+  </div>
+
+  <div class="sec-label" style="margin-bottom:14px">Roles de los facilitadores</div>
+  <div style="overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:28px">
+    <table class="roles-tbl">
+      <thead><tr><th>Facilitador</th><th>Columna Shángai</th><th>Sala Bloque 2</th><th>Función adicional</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="chip" style="background:var(--g1l);color:var(--g1)">G1 — Alcohol</span></td>
+          <td style="color:var(--g);font-weight:600">Pilar 1 — Gobernanza</td>
+          <td>Sala A</td>
+          <td>Observación conceptual al final del video G1</td>
+        </tr>
+        <tr style="background:#fafcfa">
+          <td><span class="chip" style="background:var(--g2l);color:var(--g2)">G2 — Act. Física</span></td>
+          <td style="color:var(--az);font-weight:600">Pilar 2 — Educación</td>
+          <td>Sala B</td>
+          <td>Observación conceptual al final del video G2</td>
+        </tr>
+        <tr>
+          <td><span class="chip" style="background:var(--g3l);color:var(--g3)">G3 — Alimentación</span></td>
+          <td style="color:var(--na);font-weight:600">Pilar 3 — Ciudades</td>
+          <td>Sala C</td>
+          <td>Observación conceptual al final del video G3</td>
+        </tr>
+        <tr style="background:#fafcfa">
+          <td><span class="chip" style="background:var(--g4l);color:var(--g4)">G4 — Cigarrillo</span></td>
+          <td style="color:var(--mo);font-weight:600">Control de tiempos</td>
+          <td>Sala D</td>
+          <td>Avisar 2 min antes del fin de cada bloque al coordinador</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sec-label" style="margin-bottom:14px">Contingencias rápidas</div>
+  <div class="cont-grid">
+    <div class="cont-card" style="background:#FEF2F2;border:1px solid #FCA5A5">
+      <div class="cont-title" style="color:var(--ro)">Video sin audio</div>
+      Pausar. Chat: "Abran enlace directo." Countdown 3-2-1 play. Cuesta 60 seg.
+    </div>
+    <div class="cont-card" style="background:var(--nac);border:1px solid #E0B050">
+      <div class="cont-title" style="color:var(--na)">Evaluador sin audio</div>
+      Facilitador escribe su valoración en Muro. Se menciona el aporte oralmente.
+    </div>
+    <div class="cont-card" style="background:#FEF2F2;border:1px solid #FCA5A5">
+      <div class="cont-title" style="color:var(--ro)">Meet cae</div>
+      Enviar enlace de sala de respaldo por WhatsApp en menos de 3 minutos.
+    </div>
+    <div class="cont-card" style="background:var(--azc);border:1px solid #90B8E0">
+      <div class="cont-title" style="color:var(--az)">Tablero no carga</div>
+      Usar chat de Meet. Este tablero como guía visual del coordinador solamente.
+    </div>
+    <div class="cont-card" style="background:var(--gp);border:1px solid var(--gc)">
+      <div class="cont-title" style="color:var(--g)">Facilitador no conecta</div>
+      Coordinador absorbe su columna. Sala sin facilitador: vocero pre-elegido modera.
+    </div>
+    <div class="cont-card" style="background:var(--moc);border:1px solid #C0A0D8">
+      <div class="cont-title" style="color:var(--mo)">Silencio en sala</div>
+      "¿En cuál video vieron algo que no habían notado sobre el Cauca?"
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- FIREBASE + LOGIC -->
+<!-- Firebase UMD (no module, accesible como variables globales) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+// ── FIREBASE CONFIG ─────────────────────────────────────────────
+// Reemplaza estos valores con los de tu proyecto Firebase
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAn99vdfgKiRh4PSC3iL6ySx7hjDKWNWO4",
+  authDomain: "plenaria-practica-2-grupo-b.firebaseapp.com",
+  databaseURL: "https://plenaria-practica-2-grupo-b-default-rtdb.firebaseio.com",
+  projectId: "plenaria-practica-2-grupo-b",
+  storageBucket: "plenaria-practica-2-grupo-b.firebasestorage.app",
+  messagingSenderId: "656647871208",
+  appId: "1:656647871208:web:12638651210bdfd46b475d"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+// ── ESTADO ──────────────────────────────────────────────────────
+let userName = '', db = null, connected = false, useLocal = false;
+const GRUPOS = [
+  {id:'g1',name:'Grupo 1 — Alcohol',   color:'#1A4B8B',hdr:'#1A4B8B'},
+  {id:'g2',name:'Grupo 2 — Actividad Física', color:'#1A6B3C',hdr:'#1A6B3C'},
+  {id:'g3',name:'Grupo 3 — Alimentación',color:'#9A5800',hdr:'#9A5800'},
+  {id:'g4',name:'Grupo 4 — Cigarrillo',color:'#6B2D8B',hdr:'#6B2D8B'},
+];
+const CRITERIOS = ['Contenido','Originalidad','Lenguaje','Calidad audiovisual','Adecuación audiencia'];
+const TEMAS = [
+  {key:'af', label:'1. Actividad Física', color:'#1A6B3C', bg:'#E6F3EB'},
+  {key:'alc',label:'2. Alcohol',          color:'#1A4B8B', bg:'#E6EEF8'},
+  {key:'ali',label:'3. Alimentación',     color:'#9A5800', bg:'#FFF3E0'},
+  {key:'cig',label:'4. Cigarrillo',       color:'#6B2D8B', bg:'#F3EBF9'},
+];
+
+// ── MODO LOCAL (fallback sin Firebase) ──────────────────────────
+let localData = { postits:{}, shangai:{af:{},alc:{},ali:{},cig:{}}, muro:{}, gen:{P:{},I:{},C:{}}, frases:{} };
+function loadLocal(){ try{ const d=localStorage.getItem('pb3'); if(d)localData=JSON.parse(d); }catch(e){} }
+function saveLocal(){ try{ localStorage.setItem('pb3',JSON.stringify(localData)); }catch(e){} }
+loadLocal();
+
+// ── NOMBRE / ENTRADA ────────────────────────────────────────────
+function setName(){
+  const v = document.getElementById('nameInp').value.trim();
+  if(!v){ document.getElementById('nameInp').focus(); return; }
+  userName = v;
+  document.getElementById('nameModal').style.display = 'none';
+  initApp();
+}
+document.getElementById('nameInp').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') setName();
+});
+document.querySelector('.n-btn').addEventListener('click', setName);
+document.getElementById('nameInp').focus();
+
+// ── INIT APP ────────────────────────────────────────────────────
+function initApp(){
+  buildShangai();
+  buildMuro();
+  try {
+    const app = firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    db.ref('.info/connected').on('value', snap => {
+      connected = snap.val() === true;
+      updateLive(connected);
+      if(!connected){ useLocal = true; renderAll(); }
+    });
+    subscribeAll();
+  } catch(e) {
+    useLocal = true;
+    updateLive(false, 'Modo local — solo este dispositivo');
+    renderAll();
+  }
+}
+
+function updateLive(ok, msg){
+  const dot = document.getElementById('liveDot');
+  const lbl = document.getElementById('liveLabel');
+  dot.className = 'live-dot' + (ok ? '' : ' off');
+  lbl.textContent = ok ? 'Sincronizado en tiempo real' : (msg || 'Sin conexión — modo local');
+}
+
+// ── SUBSCRIBE (Firebase compat) ──────────────────────────────────
+function subscribeAll(){
+  if(!db) return;
+  db.ref('postits').on('value', snap=>{ renderPostits(snap.val()||{}); });
+  db.ref('shangai').on('value', snap=>{ renderShangaiData(snap.val()||{}); });
+  GRUPOS.forEach(g => CRITERIOS.forEach(c => {
+    db.ref(`muro/${g.id}/${c}`).on('value', snap=>{ renderMuroNotas(g.id,c,snap.val()||{}); });
+  }));
+  ['P','I','C'].forEach(col => {
+    db.ref(`gen/${col}`).on('value', snap=>{
+      const data = snap.val()||{};
+      renderGenCol(col, data);
+      // update counter from all three columns
+      if(col==='C'){
+        let t=0;
+        ['P','I','C'].forEach(c=>{
+          db.ref(`gen/${c}`).once('value',s=>{ t+=Object.keys(s.val()||{}).length; document.getElementById('cnt4').textContent=String(t); });
+        });
+      }
+    });
+  });
+  db.ref('frases').on('value', snap=>{ renderFrases(snap.val()||{}); });
+}
+
+function dbPush(path, data){
+  if(useLocal || !db){ localPush(path, data); return; }
+  db.ref(path).push({...data, by: userName, ts: Date.now()});
+}
+function dbSet(path, val){
+  if(useLocal || !db){ localSet(path, val); return; }
+  db.ref(path).set(val);
+}
+function dbDel(path){
+  if(useLocal || !db){ localDel(path); return; }
+  db.ref(path).remove();
+}
+
+// ── LOCAL FALLBACK OPS ───────────────────────────────────────────
+function localPush(path,data){
+  const key='lk'+Date.now()+Math.random().toString(36).slice(2,6);
+  const parts=path.split('/');
+  let o=localData;
+  for(let i=0;i<parts.length;i++){
+    if(!o[parts[i]])o[parts[i]]={};
+    o=o[parts[i]];
+  }
+  o[key]={...data,by:userName,ts:Date.now()};
+  saveLocal(); renderAll();
+}
+function localSet(path,val){
+  const parts=path.split('/');
+  let o=localData;
+  for(let i=0;i<parts.length-1;i++){
+    if(!o[parts[i]])o[parts[i]]={};
+    o=o[parts[i]];
+  }
+  o[parts[parts.length-1]]=val;
+  saveLocal(); renderAll();
+}
+function localDel(path){
+  const parts=path.split('/');
+  let o=localData;
+  for(let i=0;i<parts.length-1;i++){
+    if(!o[parts[i]])return;
+    o=o[parts[i]];
+  }
+  delete o[parts[parts.length-1]];
+  saveLocal(); renderAll();
+}
+
+function renderAll(){
+  if(!useLocal) return;
+  renderPostits(localData.postits||{});
+  renderShangaiData(localData.shangai||{});
+  GRUPOS.forEach(g=>CRITERIOS.forEach(c=>{
+    renderMuroNotas(g.id,c,(localData.muro||{})[g.id]?.[c]||{});
+  }));
+  ['P','I','C'].forEach(col=>renderGenCol(col,(localData.gen||{})[col]||{}));
+  updateGenCnt();
+  renderFrases(localData.frases||{});
+}
+
+// ── POST-ITS ─────────────────────────────────────────────────────
+function renderPostits(data){
+  const g=document.getElementById('pitGrid');
+  const entries=Object.entries(data);
+  document.getElementById('cnt1').textContent=String(entries.length);
+  if(!entries.length){
+    g.innerHTML='<div class="empty"><div class="empty-icon">💬</div>Los participantes escribirán sus ideas aquí.</div>';
+    return;
+  }
+  g.innerHTML=entries.sort((a,b)=>a[1].ts-b[1].ts).map(([k,v])=>`
+    <div class="postit">
+      <div class="postit-author">${esc(v.by||'—')}</div>
+      ${esc(v.text)}
+      <button class="postit-del" onclick="delPit('${k}')">×</button>
+    </div>`).join('');
+}
+window.addPit=function(){
+  const inp=document.getElementById('pitInp');
+  if(!inp.value.trim()) return;
+  dbPush('postits',{text:inp.value.trim()});
+  inp.value='';
+};
+window.delPit=function(k){
+  if(useLocal||!db) localDel('postits/'+k);
+  else db.ref('postits/'+k).remove();
+};
+
+// ── SHANGAI TABLE ─────────────────────────────────────────────────
+function buildShangai(){
+  const tbody=document.getElementById('stblBody');
+  tbody.innerHTML=TEMAS.map(t=>`
+    <tr>
+      <td><span class="tema-tag" style="background:${t.bg};color:${t.color}">${esc(t.label)}</span></td>
+      ${['p1','p2','p3'].map(p=>`
+        <td>
+          <textarea class="stbl-ta" id="st_${t.key}_${p}"
+            placeholder="Escribir ejemplo…"
+            onblur="saveShangai('${t.key}','${p}',this.value)"
+            oninput="this.classList.toggle('filled',this.value.length>0)"
+          ></textarea>
+        </td>`).join('')}
+    </tr>`).join('');
+}
+function renderShangaiData(data){
+  TEMAS.forEach(t=>{
+    ['p1','p2','p3'].forEach(p=>{
+      const el=document.getElementById(`st_${t.key}_${p}`);
+      if(!el) return;
+      const v=(data[t.key]||{})[p]||'';
+      if(document.activeElement!==el){ el.value=v; el.classList.toggle('filled',v.length>0); }
+    });
+  });
+}
+window.saveShangai=function(k,p,v){
+  dbSet(`shangai/${k}/${p}`,v);
+};
+
+// ── MURO ──────────────────────────────────────────────────────────
+function buildMuro(){
+  document.getElementById('muroGrid').innerHTML=GRUPOS.map(g=>`
+    <div class="muro-card">
+      <div class="muro-hdr" style="background:${g.color}">${esc(g.name)}</div>
+      <div class="muro-body">
+        ${CRITERIOS.map(c=>`
+          <div class="crit-block">
+            <div class="crit-lbl">${esc(c)}</div>
+            <div class="crit-notas" id="cn_${g.id}_${esc2(c)}"></div>
+            <div class="nota-row">
+              <input class="nota-inp" id="ni_${g.id}_${esc2(c)}" placeholder="Anotar valoración…" maxlength="200"
+                onkeydown="if(event.key==='Enter')addNota('${g.id}','${c}')">
+              <button class="btn-sm" onclick="addNota('${g.id}','${c}')">+</button>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function renderMuroNotas(gid,c,data){
+  const el=document.getElementById(`cn_${gid}_${esc2(c)}`);
+  if(!el) return;
+  const entries=Object.entries(data);
+  el.innerHTML=entries.sort((a,b)=>a[1].ts-b[1].ts).map(([k,v])=>`
+    <div class="nota">
+      <strong>${esc(v.by||'—')}:</strong> ${esc(v.text)}
+      <button class="nota-del" onclick="delNota('${gid}','${c}','${k}')">×</button>
+    </div>`).join('') || '<div style="font-size:12px;color:#ccc;padding:4px 0">Sin valoraciones aún.</div>';
+}
+window.addNota=function(gid,c){
+  const inp=document.getElementById(`ni_${gid}_${esc2(c)}`);
+  if(!inp||!inp.value.trim()) return;
+  dbPush(`muro/${gid}/${c}`,{text:inp.value.trim()});
+  inp.value='';
+};
+window.delNota=function(gid,c,k){
+  if(useLocal||!db) localDel(`muro/${gid}/${c}/${k}`);
+  else db.ref(`muro/${gid}/${c}/${k}`).remove();
+};
+
+// ── GENERADORA ────────────────────────────────────────────────────
+const genColors={P:'var(--az)',I:'var(--g)',C:'var(--na)'};
+function renderGenCol(col,data){
+  const el=document.getElementById('gen'+col);
+  if(!el) return;
+  const entries=Object.entries(data);
+  el.innerHTML=entries.sort((a,b)=>a[1].ts-b[1].ts).map(([k,v])=>`
+    <div class="gen-idea">
+      <strong style="font-size:11px;color:${genColors[col]}">${esc(v.by||'—')}</strong><br>${esc(v.text)}
+      <button class="gen-del" onclick="delGen('${col}','${k}')">×</button>
+    </div>`).join('') || '<div class="empty" style="padding:20px 8px">Sin ideas aún.</div>';
+}
+function updateGenCnt(){
+  let total = 0;
+  ['P','I','C'].forEach(col => {
+    total += Object.keys((localData.gen||{})[col]||{}).length;
+  });
+  document.getElementById('cnt4').textContent = String(total);
+}
+window.addGen=function(col){
+  const inp=document.getElementById('in'+col);
+  if(!inp||!inp.value.trim()) return;
+  dbPush(`gen/${col}`,{text:inp.value.trim()});
+  inp.value='';
+};
+window.delGen=function(col,k){
+  if(useLocal||!db) localDel(`gen/${col}/${k}`);
+  else db.ref(`gen/${col}/${k}`).remove();
+};
+
+// ── FRASES ────────────────────────────────────────────────────────
+function renderFrases(data){
+  const g=document.getElementById('fraseGrid');
+  const entries=Object.entries(data);
+  document.getElementById('cnt5').textContent=String(entries.length);
+  if(!entries.length){
+    g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">✨</div>Las frases aparecerán aquí al completarlas.</div>';
+    return;
+  }
+  g.innerHTML=entries.sort((a,b)=>a[1].ts-b[1].ts).map(([k,v])=>`
+    <div class="frase-card">
+      <button class="frase-del" onclick="delFrase('${k}')">×</button>
+      <div class="fa">${esc(v.by||'—')}</div>
+      <div class="fb"><em>"${esc(v.antes)}"</em></div>
+      <div class="sep"></div>
+      <div class="fc">Ahora:</div>
+      <div class="fd">"${esc(v.ahora)}"</div>
+    </div>`).join('');
+}
+window.addFrase=function(){
+  const a=document.getElementById('frA').value.trim();
+  const b=document.getElementById('frB').value.trim();
+  if(!a||!b){alert('Completa ambas partes de la frase.');return;}
+  dbPush('frases',{antes:a,ahora:b});
+  document.getElementById('frA').value='';
+  document.getElementById('frB').value='';
+};
+window.delFrase=function(k){
+  if(useLocal||!db) localDel('frases/'+k);
+  else db.ref('frases/'+k).remove();
+};
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+window.esc = esc;
+function esc2(s){ return s.replace(/ /g,'_'); }
+
+// ── TABS ─────────────────────────────────────────────────────────
+window.go=function(id,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  btn.classList.add('on');
+};
+
+// ── TIMER ─────────────────────────────────────────────────────────
+let tmrSec=1200,tmrRun=false,tmrRef=null,tmrLbl='Grupo presentador';
+window.openTm=function(){ document.getElementById('tOv').classList.add('on'); renderTm(); };
+window.closeTm=function(){ document.getElementById('tOv').classList.remove('on'); };
+window.setTm=function(s,l){ clearInterval(tmrRef); tmrRef=null; tmrRun=false; tmrSec=s; tmrLbl=l; document.getElementById('tStartBtn').textContent='Iniciar'; renderTm(); };
+window.tToggle=function(){
+  if(tmrRun){ clearInterval(tmrRef); tmrRef=null; tmrRun=false; document.getElementById('tStartBtn').textContent='Reanudar'; document.getElementById('tmrPill').classList.remove('run'); }
+  else { tmrRun=true; document.getElementById('tStartBtn').textContent='Pausar'; document.getElementById('tmrPill').classList.add('run'); tmrRef=setInterval(()=>{ if(tmrSec>0){tmrSec--;renderTm();}else{clearInterval(tmrRef);tmrRef=null;tmrRun=false;document.getElementById('tStartBtn').textContent='Iniciar';document.getElementById('tmrPill').classList.remove('run');} },1000); }
+};
+window.tReset=function(){ clearInterval(tmrRef); tmrRef=null; tmrRun=false; tmrSec=tmrSec; document.getElementById('tStartBtn').textContent='Iniciar'; renderTm(); };
+function renderTm(){
+  const m=Math.floor(tmrSec/60),s=tmrSec%60;
+  const str=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const d=document.getElementById('tDisp');
+  d.textContent=str;
+  d.className='t-disp'+(tmrSec<=60?' crit':tmrSec<=120?' warn':' ok');
+  document.getElementById('tLbl').textContent=tmrLbl;
+  document.getElementById('tmrPill').textContent='⏱ '+str;
+}
+renderTm();
+</script>
+</body>
+</html>
